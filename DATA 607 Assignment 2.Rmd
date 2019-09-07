@@ -1,0 +1,78 @@
+---
+title: "DATA 607 Assignment 2"
+author: "Samuel I Kigamba"
+date: "September 7, 2019"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### DATA 607: Assignment 2 SQL & R
+
+```{r install_packages_RMySQL, eval=TRUE}
+#install.packages("RMySQL")
+```
+
+```{r load_library_RMySQL, eval=TRUE}
+library(RMySQL)
+```
+
+```{r connect_database_RMySQL, eval=TRUE}
+mydb = dbConnect(MySQL(), user='root', password='Sammiggy2030^', dbname='movies', host='localhost')
+```
+
+```{r view_list_of_tables_in _moviesdb_RMySQL, eval=TRUE}
+dbListTables(mydb)
+```
+
+```{r list_fields_in_moviesdb_table_RMySQL, eval=TRUE}
+dbListFields(mydb, 'movies')
+```
+
+
+```{r view_table_in_moviesdb_RMySQL, eval=TRUE}
+rs = dbSendQuery(mydb, "select * from movies ORDER BY Respondent")
+ratings = fetch(rs)
+ratings
+```
+
+
+#To view and impute missing values
+#install MICE
+```{r install_mice_to_impute_moviesdb_RMySQL, eval=TRUE}
+#install.packages("mice")
+library(mice)
+```
+
+#install missForest
+```{r install_missForest_to_impute_moviesdb_RMySQL, eval=TRUE}
+#install.packages("missForest")
+library(missForest)
+```
+
+#remove categorical variables
+```{r remove_categorical_variables_before_imputation_moviesdb_RMySQL, eval=TRUE}
+ratings_mice <- subset(ratings, select = -c(Respondent))
+summary(ratings_mice)
+```
+
+#use md.pattern() to return a tabular form of missing value present in each variable in a data set.
+```{r view_data_after_removal_of_categorical_variables_moviesdb_RMySQL, eval=TRUE}
+md.pattern(ratings_mice)
+```
+
+#We can also create a visual which represents missing values.
+```{r visual_for_missing_values_moviesdb_RMySQL, eval=TRUE}
+#install.packages("VIM")
+library(VIM)
+mice_plot <- aggr(ratings_mice, col=c('navyblue','yellow'),
+                  numbers=TRUE, sortVars=TRUE,
+                  labels=names(ratings_mice), cex.axis=.7,
+                  gap=3, ylab=c("Missing data","Pattern"))
+```
+
+#Imputation steps to follow
+
