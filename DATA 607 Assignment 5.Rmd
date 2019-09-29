@@ -9,22 +9,100 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+The chart above describes arrival delays for two airlines across five destinations. Your task is to:
+(1) Create a .CSV file (or optionally, a MySQL database!) that includes all of the information above. You’re encouraged to use a “wide” structure similar to how the information appears above, so that you can practice tidying and transformations as described below.
+(2) Read the information from your .CSV file into R, and use tidyr and dplyr as needed to tidy and transform your data.
+(3) Perform analysis to compare the arrival delays for the two airlines.
+(4) Your code should be in an R Markdown file, posted to rpubs.com, and should include narrative descriptions of your data cleanup work, analysis, and conclusions. Please include in your homework submission:
+??? The URL to the .Rmd file in your GitHub repository. and
+??? The URL for your rpubs.com web page.
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+#set working directory and Install all the relevant packages and load their respective libraries into R.
+```{r, include=FALSE}
+#getwd()
+#setwd("C:/Users/iguku/Google Drive/R and SQL/CUNY MSc Data Science/Data 607/Assignment 5")
+```
+```{r}
+library(stringr)
+library(tidyr)
+library(dplyr)
+library(tidyverse)
+library(tibble)
+library(caret)
+library(readr)
 ```
 
-## Including Plots
+# Upload the data into Github for ease of accessibility and testing by a wider audience.
+Follow this link to see uploaded .csv file (https://raw.githubusercontent.com/igukusamuel/DATA-607-Assignments/master/tidy_trans.csv)
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+airlines <- read_csv("https://raw.githubusercontent.com/igukusamuel/DATA-607-Assignments/master/tidy_trans.csv")
+head(airlines, 5) #Print out first 5 rows to confirm that the data have been loaded correctly.
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r include=FALSE}
+x <- nrow(airlines) 
+x
+```
+
+# Fill in the missing cell values. Note one can as well use the fill() function.
+```{r}
+airlines[2,1] <- airlines[1,1]
+airlines[5,1] <- airlines[4,1]
+airlines[,2] <- sapply(airlines[,2], str_replace, " ", "_")
+
+airlines <- na.omit(airlines) # To omit the null/empty rows
+
+head(airlines)
+
+names(airlines) #Column names before renaming the first and second columns.
+```
+
+#Rename first and second columns using the dplyr rename() function.
+```{r}
+airlines <- dplyr::rename(airlines, carrier = X1)
+airlines <- dplyr::rename(airlines, arrival_type = X2)
+
+names(airlines) #Column names after renaming the first and second columns.
+```
+
+
+# Use the gather() function to include all the cities in the separate columns [3-7] into a single column named city.
+```{r}
+airlines <- gather(airlines, "city", "n", 3:7)
+head(airlines)
+```
+
+#Use the spread() function provided in the dplyr package to spread the elements of column named arrival_type into separate columns named "delayed" and "on_time"
+```{r}
+airlines <- spread(airlines, "arrival_type", "n")
+airlines
+
+dplyr::glimpse(airlines) #use the dplyr function glimpse() to view all the columns of the resulting data frame.
+```
+
+# Use the mutate() function in dplyr to add new columns and respective values into the data frame. note that the mutate function does not alter the structure of the initial data frame unless its assigned to an object.
+```{r}
+airlines <- mutate(airlines, total_arrivals = delayed + on_time)
+airlines <- mutate(airlines, rate_on_time = on_time/total_arrivals)
+
+head(airlines)
+
+```
+
+
+#select city and ontime and delayed columns
+```{r}
+select(airlines, city, on_time, delayed)
+
+```
+
+#USe the pipe operator to perform multiple operations
+```{r}
+airlines %>% summarise(mean = mean(on_time), median = median(on_time), n = n())
+
+airlines %>% group_by(on_time) %>% 
+        arrange(desc(rate_on_time))
+
+```
